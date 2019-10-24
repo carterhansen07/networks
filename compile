@@ -1,0 +1,2 @@
+sudo g++ example1.cpp frameio2.cpp util.cpp -lpthread -o out
+sudo ./out
