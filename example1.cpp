@@ -9,18 +9,22 @@
 #include <pthread.h>
 #include <fstream>
 #include <iomanip>
-
+static octet iptosend[4];
 static unsigned char     MY_MAC[6];
 static unsigned char      MY_IP[4];
 static unsigned char TARGET_MAC[6];
 static unsigned char  TARGET_IP[4];
-
+int placeholder;
+int placeholder1;
+int placeholder2;
+int placeholder3;
 void getmac(unsigned char* mac)
 {
-unsigned char my_mac[6];
-unsigned char temp;
-unsigned char semicolon;
-unsigned char useless;
+
+char my_mac[6];
+char temp;
+char semicolon;
+char useless;
 std::ifstream addressfile;
 addressfile.open("/sys/class/net/eno1/address");
 
@@ -149,7 +153,7 @@ void *ip_protocol_loop(void *arg)
 //
 
 
-
+unsigned int count = 0;
 void *arp_protocol_loop(void *arg)
 {
 
@@ -170,29 +174,16 @@ void *arp_protocol_loop(void *arg)
    octet reply[42];
    struct mac_ip_pair cache[100];
    //construct our broadcast base
-   broadcast[0]  = 0xff;
-   broadcast[1]  = 0xff;
-   broadcast[2]  = 0xff;
-   broadcast[3]  = 0xff;
-   broadcast[4]  = 0xff;
-   broadcast[5]  = 0xff;
+
+
+   event_kind event; // Enum for PACKET = 0 or TIMER = 1
    broadcast[6]  = MY_MAC[0];
    broadcast[7]  = MY_MAC[1];
    broadcast[8]  = MY_MAC[2];
    broadcast[9]  = MY_MAC[3];
    broadcast[10] = MY_MAC[4];
    broadcast[11] = MY_MAC[5];
-   broadcast[12] = 0x08;
-   broadcast[13] = 0x06;
-   broadcast[14] = 0x00;
-   broadcast[15] = 0x01;
-   broadcast[16] = 0x08;
-   broadcast[17] = 0x00;
-   broadcast[18] = 0x06;
-   broadcast[19] = 0x04;
-   broadcast[20] = 0x00;
-   broadcast[21] = 0x01;
-   //our mac
+
    broadcast[22] = MY_MAC[0];
    broadcast[23] = MY_MAC[1];
    broadcast[24] = MY_MAC[2];
@@ -204,6 +195,36 @@ void *arp_protocol_loop(void *arg)
    broadcast[29] = MY_IP[1];
    broadcast[30] = MY_IP[2];
    broadcast[31] = MY_IP[3];
+   while ( 1 )
+   {
+     broadcast[0]  = 0xff;
+   broadcast[1]  = 0xff;
+   broadcast[2]  = 0xff;
+   broadcast[3]  = 0xff;
+   broadcast[4]  = 0xff;
+   broadcast[5]  = 0xff;
+   broadcast[12] = 0x08;
+   broadcast[13] = 0x06;
+   broadcast[14] = 0x00;
+   broadcast[15] = 0x01;
+   broadcast[16] = 0x08;
+   broadcast[17] = 0x00;
+   broadcast[18] = 0x06;
+   broadcast[19] = 0x04;
+   broadcast[20] = 0x00;
+   broadcast[21] = 0x01;
+   //our mac
+   // broadcast[22] = MY_MAC[0];
+   // broadcast[23] = MY_MAC[1];
+   // broadcast[24] = MY_MAC[2];
+   // broadcast[25] = MY_MAC[3];
+   // broadcast[26] = MY_MAC[4];
+   // broadcast[27] = MY_MAC[5];
+   // //our ip
+   // broadcast[28] = MY_IP[0];
+   // broadcast[29] = MY_IP[1];
+   // broadcast[30] = MY_IP[2];
+   // broadcast[31] = MY_IP[3];
    //this next sequence is 0 for target mac since we don't have it
    broadcast[32] = 0x00;
    broadcast[33] = 0x00;
@@ -235,13 +256,6 @@ void *arp_protocol_loop(void *arg)
     broadcast[57] = 0x00;
     broadcast[58] = 0x00;
     broadcast[59] = 0x00;
-
-
-
-   event_kind event; // Enum for PACKET = 0 or TIMER = 1
-
-   while ( 1 )
-   {
     incache = false;
       arp_queue.recv(&event, buf, sizeof(buf));
       //printf("got an ARP %s\n", buf[7]==1? "request":"reply");
@@ -342,7 +356,7 @@ void *arp_protocol_loop(void *arg)
                     
                     if (cache[i].ip[0] == buf[14] & cache[i].ip[1] == buf[15] & cache[i].ip[2] == buf[16]&cache[i].ip[3] == buf[17])
                       { 
-                        printf("Found in cache \n");
+                        //printf("Found in cache \n");
                         //it was found 
                         tocache = false;
                         i = cache_length;
@@ -364,7 +378,7 @@ void *arp_protocol_loop(void *arg)
               //cache the ip
               for (unsigned int j = 0 ; j<4; j++)
                   {
-                    printf(" %d", buf[14+j]);
+                   printf(" %d", buf[14+j]);
                     cache[cache_length-1].ip[j] = buf[14+j];
                   }  
                   printf("\n");
@@ -375,7 +389,7 @@ void *arp_protocol_loop(void *arg)
                     cache[cache_length-1].mac[l] = buf[8+l];
                   }
                   cache_length++;
-                  printf("Cache Successful\n");
+                 // printf("Cache Successful\n");
 
                   incache = true;
             }
@@ -454,8 +468,81 @@ void *arp_protocol_loop(void *arg)
           }
         }
 
+count = count + 1;
+if (count == 50){
+  count = 0;
+    printf("Please enter IP: \n");
 
     
+    scanf("%i %i %i %i",iptosend,(iptosend+1),(iptosend+2),(iptosend+3));
+    printf("\n");
+
+    printf("ip entered was: %d  %d  %d  %d \n",iptosend[0],iptosend[1],iptosend[2],iptosend[3]);
+        incache = false;
+
+        for (unsigned int i = 0; i< cache_length; i++)
+                {
+                  //this checks to see if the ip's match
+                    if (cache[i].ip[0] == iptosend[0] & cache[i].ip[1] == iptosend[1] & cache[i].ip[2] == iptosend[2]&cache[i].ip[3] == iptosend[3])
+                      { 
+                        printf("Ip entered  request Found in cache Broadcasting it's MAC\n");
+                        //it was found 
+                            tocache = false;
+                            indexforip = i;
+                            i = cache_length;
+                            incache = true;
+                             broadcast[0]  = cache[indexforip].mac[0];
+                             broadcast[1]  = cache[indexforip].mac[1];
+                             broadcast[2]  = cache[indexforip].mac[2];
+                             broadcast[3]  = cache[indexforip].mac[3];
+                             broadcast[4]  = cache[indexforip].mac[4];
+                             broadcast[5]  = cache[indexforip].mac[5];
+
+                             broadcast[21] = 0x02;//for reply
+                             //This is the value for what we are sharing
+                             broadcast[32] = cache[indexforip].mac[0];
+                             broadcast[33] = cache[indexforip].mac[1];
+                             broadcast[34] = cache[indexforip].mac[2];
+                             broadcast[35] = cache[indexforip].mac[3];
+                             broadcast[36] = cache[indexforip].mac[4];
+                             broadcast[37] = cache[indexforip].mac[5];
+                             //this is the targeted ip
+                             broadcast[38] = cache[indexforip].ip[0];
+                             broadcast[39] = cache[indexforip].ip[1];
+                             broadcast[40] = cache[indexforip].ip[2];
+                             broadcast[41] = cache[indexforip].ip[3];
+                        printf("here is our payload: \n");   
+                        for (int a = 0; a <60; a++)
+                        {
+                          printf ("%02x ",broadcast[a]);
+                          if (a == 15 | a == 31 | a == 47)
+                            printf("\n");
+                        }
+                        printf("\n");     
+                        bytes_sent = net.send_frame(&broadcast, sizeof(broadcast));
+                        printf("Reply was sent for %d bytes \n",bytes_sent);
+
+                      }
+                      else 
+                      {
+                        tocache = true;
+                        //printf("do we get here2 \n");
+                      }
+                }
+                if (incache == false)
+                {
+                  printf("Ip entered not in cache\n");
+                  broadcast[38] = iptosend[0];
+                  broadcast[39] = iptosend[1];
+                  broadcast[40] = iptosend[2];
+                  broadcast[41] = iptosend[3];
+                  bytes_sent = net.send_frame(&broadcast, sizeof(broadcast));
+                  printf("\nBroadcast sent for %d bytes \n",bytes_sent);
+
+
+                }
+              }
+
    }
 }
 
@@ -468,6 +555,7 @@ pthread_t loop_thread, arp_thread, ip_thread;
 // start all the threads then step back and watch (actually, the timer
 // thread will be started later, but that is invisible to us.)
 //
+
 int main()
 {
     
