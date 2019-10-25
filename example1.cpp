@@ -68,6 +68,8 @@ frameio net;             // gives us access to the raw network
 message_queue ip_queue;  // message queue for the IP protocol stack
 message_queue arp_queue; // message queue for the ARP protocol stack
 message_queue arp_ether_frame;
+message_queue cache_timer;
+
 
 struct ether_frame       // handy template for 802.3/DIX frames
 {
@@ -430,8 +432,15 @@ void *arp_protocol_loop(void *arg)
               }
               if (sendbroadcast == true)
               { 
+                printf("Broadcast request sent\n");
+                mac_request[macrequestsize-1].ip[0] = broadcast[38];
+                mac_request[macrequestsize-1].ip[1] = broadcast[39];
+                mac_request[macrequestsize-1].ip[2] = broadcast[40];
+                mac_request[macrequestsize-1].ip[3] = broadcast[41];
+                mac_request[macrequestsize-1].requestsent = true;
+
                 bytes_sent = net.send_frame(&broadcast, sizeof(broadcast));
-                macrequestsize+1;
+                macrequestsize= macrequestsize+1;
               }
               //printf("Broadcast for MAC sent bytes sent was %d \n",bytes_sent);
 
